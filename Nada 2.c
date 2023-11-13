@@ -1,100 +1,131 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdbool.h>
+#include <string.h>
 
-// Structure to store user information with an active flag
-struct User {
-    char username[50];
-    char password[50];
+#define MAX_USERS 10
+#define MAX_USERNAME_LENGTH 20
+#define MAX_PASSWORD_LENGTH 20
+
+enum FlagType { INTEGER, BOOLEAN };
+
+struct Flag {
+    enum FlagType type;
     union {
-        int active;  // 1 for active, 0 for inactive
-        bool isActive;  // You can use a boolean flag instead of an integer
-    };
+        int intValue;
+        bool boolValue;
+    } value;
 };
 
-// Function to register a new user
-void registerUser(struct User users[], int *userCount) {
-    if (*userCount >= 10) {
-        printf("User limit reached. Cannot register more users.\n");
+struct User {
+    char username[MAX_USERNAME_LENGTH];
+    char password[MAX_PASSWORD_LENGTH];
+    struct Flag flag;
+};
+
+struct User users[MAX_USERS];
+int numUsers = 0;
+char flagInput[10];
+void registerUser() {
+    if (numUsers >= MAX_USERS) {
+        printf("Maximum number of users reached. Cannot register new user.\n");
         return;
     }
 
     struct User newUser;
-    printf("Enter a username: ");
+
+    printf("Enter username: ");
     scanf("%s", newUser.username);
 
-    // Check if the username already exists
-    for (int i = 0; i < *userCount; i++) {
-        if (strcmp(users[i].username, newUser.username) == 0) {
-            printf("Username already exists. Please choose a different username.\n");
-            return;
-        }
-    }
-
-    printf("Enter a password: ");
+    printf("Enter password: ");
     scanf("%s", newUser.password);
 
-    newUser.active = 1; // Set the user as active
+    printf("Enter flag (0 or 1 for integer, ( true , yes ) or  ( false , no ) for boolean): ");
+    scanf("%s", flagInput);
 
-    users[*userCount] = newUser;
-    (*userCount)++;
-    printf("Registration successful!\n");
+    if (strcmp(flagInput, "0") == 0 || strcmp(flagInput, "1") == 0) {
+        newUser.flag.type = INTEGER;
+        newUser.flag.value.intValue = atoi(flagInput);
+    }
+    else if (strcmp(flagInput, "true") == 0 || strcmp(flagInput, "yes") == 0) {
+        newUser.flag.type = BOOLEAN;
+        newUser.flag.value.boolValue = true;
+    }
+    else if (strcmp(flagInput, "false") == 0 || strcmp(flagInput, "no") == 0) {
+        newUser.flag.type = BOOLEAN;
+        newUser.flag.value.boolValue = false;
+    }
+    else {
+        printf("Invalid flag input. Defaulting to 0 (integer).\n");
+        newUser.flag.type = INTEGER;
+        newUser.flag.value.intValue = 0;
+    }
+
+    users[numUsers++] = newUser;
+
+    printf("User registered successfully.\n");
 }
 
-// Function to log in a user
-void loginUser(struct User users[], int userCount) {
-    char username[50];
-    char password[50];
-    printf("Enter your username: ");
-    scanf("%s", username);
+void loginUser() {
+    char username[MAX_USERNAME_LENGTH];
+    char password[MAX_PASSWORD_LENGTH];
 
-    int found = 0;
-    for (int i = 0; i < userCount; i++) {
-        if (strcmp(users[i].username, username) == 0) {
-            printf("Enter your password: ");
-            scanf("%s", password);
-            if (strcmp(users[i].password, password) == 0) {
-                if (users[i].active == 1) {
-                    printf("Login successful! Welcome, %s!\n", username);
-                    found = 1;
-                } else {
-                    printf("User is inactive. Please contact support.\n");
+    if ((strcmp(flagInput, "true") == 0 || strcmp(flagInput, "yes") == 0 || strcmp(flagInput, "1") == 0)) {
+        printf("Enter username: ");
+        scanf("%s", username);
+
+        printf("Enter password: ");
+        scanf("%s", password);
+
+        for (int i = 0; i < numUsers; i++) {
+            if (strcmp(users[i].username, username) == 0 && strcmp(users[i].password, password) == 0) {
+                if (users[i].flag.type == INTEGER && users[i].flag.value.intValue == 0) {
+                    printf("You are not active. Login failed.\n");
                 }
-                break;
-            } else {
-                printf("Incorrect password.\n");
+                else if (users[i].flag.type == BOOLEAN && users[i].flag.value.boolValue == false) {
+                    printf("You are not active. Login failed.\n");
+                }
+                else {
+                    printf("Login successful. Welcome, %s!\n", username);
+                }
+                return;
             }
         }
     }
-
-    if (!found) {
-        printf("User not found. Please register or check your credentials.\n");
+    else {
+        printf("You are not active. Login failed.\n");
     }
+    
+    printf("Invalid username or password. Login failed.\n");
 }
 
-int main() {
-    struct User users[10];  // Assuming we can store up to 10 users
-    int userCount = 0;
 
+int main() {
     int choice;
-    while (1) {
-        printf("1. Register\n2. Login\n3. Exit\nEnter your choice: ");
+
+    do {
+        printf("1. Register\n");
+        printf("2. Login\n");
+        printf("3. Exit\n");
+        printf("Enter your choice: ");
         scanf("%d", &choice);
 
         switch (choice) {
             case 1:
-                registerUser(users, &userCount);
+                registerUser();
                 break;
             case 2:
-                loginUser(users, userCount);
+                loginUser();
                 break;
             case 3:
-                printf("Goodbye!\n");
-                return 0;
+                printf("See You Soon...\n");
+                break;
             default:
                 printf("Invalid choice. Please try again.\n");
         }
-    }
+
+        printf("\n");
+    } while (choice != 3);
 
     return 0;
 }
+// if (strcmp(users[i].username, username) == 0 && strcmp(users[i].password, password) == 0)
